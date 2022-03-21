@@ -57,12 +57,12 @@ class PerformanceTests(unittest.TestCase):
 
     def _write_blob_contents(self, filename, data):
         if settings.diagnostics.write_blob_contents:
-            with open('original-blob-' + filename, 'wb') as data_file:
+            with open(f'original-blob-{filename}', 'wb') as data_file:
                 data_file.write(data)
 
     def _write_serialized_frame(self, filename, data):
         if settings.diagnostics.write_serialized_frame:
-            with open('serialized-frame-' + filename, 'wb') as data_file:
+            with open(f'serialized-frame-{filename}', 'wb') as data_file:
                 data_file.write(data)
 
     def test_serialize_40mb_dataframe(self):

@@ -101,7 +101,6 @@ class Test_serialize_test(unittest.TestCase):
         f = _deserialize_func(s, glbs)
 
         self.assertEqual(f(), 200)
-        pass
 
     def test_core_types(self):
         values = [42, 'abc', b'abc', 100.0, True, False, 3j, None, [1,2,3], (1,2,3), {2:3}]

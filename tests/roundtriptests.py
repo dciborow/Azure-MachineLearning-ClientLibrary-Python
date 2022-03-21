@@ -56,12 +56,12 @@ class RoundTripTests(unittest.TestCase):
 
     def _write_blob_contents(self, filename, data):
         if settings.diagnostics.write_blob_contents:
-            with open('original-blob-' + filename, 'wb') as data_file:
+            with open(f'original-blob-{filename}', 'wb') as data_file:
                 data_file.write(data)
 
     def _write_serialized_frame(self, filename, data):
         if settings.diagnostics.write_serialized_frame:
-            with open('serialized-frame-' + filename, 'wb') as data_file:
+            with open(f'serialized-frame-{filename}', 'wb') as data_file:
                 data_file.write(data)
 
     def test_download_blob_then_upload_as_dataframe_then_read_dataset(self):
@@ -158,12 +158,12 @@ class RoundTripTests(unittest.TestCase):
                 print('skipped: {0}'.format(dataset.name))
                 continue
 
-            print('downloading: ' + dataset.name)
+            print(f'downloading: {dataset.name}')
             frame = dataset.to_dataframe()
 
-            print('uploading: ' + dataset.name)
-            dataset_name = 'unittest' + dataset.name + id_generator()
-            description = 'safe to be deleted - ' + dataset_name
+            print(f'uploading: {dataset.name}')
+            dataset_name = f'unittest{dataset.name}{id_generator()}'
+            description = f'safe to be deleted - {dataset_name}'
             self.workspace.datasets.add_from_dataframe(frame, dataset.data_type_id, dataset_name, description)
 
 

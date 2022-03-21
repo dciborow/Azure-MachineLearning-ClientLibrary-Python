@@ -110,12 +110,11 @@ class _RestClient(object):
                                            node_id, port_name, stream):
         api_path = self.INTERMEDIATE_DATASET_URI_FMT.format(
             workspace_id, experiment_id, node_id, port_name)
-        response = requests.get(
+        return requests.get(
             url=urljoin(self._service_endpoint, api_path),
             headers=self._get_headers(),
             stream=stream,
         )
-        return response
 
     def open_dataset_contents(self, url):
         response = requests.get(url, stream=True)
@@ -170,13 +169,12 @@ class _RestClient(object):
             api_path = self.DATASOURCES_URI_FMT.format(workspace_id)
         except AzureMLConflictHttpError as e:
             raise AzureMLConflictHttpError(
-                'A data set named "{}" already exists'.format(name), 
-                e.status_code
+                f'A data set named "{name}" already exists', e.status_code
             )
 
-        datasource_id = self._send_post_req(
+
+        return self._send_post_req(
             api_path, json.dumps(metadata), self.CONTENT_TYPE_HEADER_VALUE_JSON)
-        return datasource_id
 
     def _send_get_req(self, api_path):
         response = requests.get(

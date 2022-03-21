@@ -53,7 +53,8 @@ class AzureMLHttpError(AzureMLError):
 class AzureMLUnauthorizedError(AzureMLHttpError):
     '''Unauthorized error from Azure ML REST API.'''
     def __init__(self, message, status_code):
-        message = 'Unauthorized, please check your workspace ID and authorization token ({})'.format(message)
+        message = f'Unauthorized, please check your workspace ID and authorization token ({message})'
+
         super(AzureMLUnauthorizedError, self).__init__(message, status_code)
 
 

@@ -105,11 +105,8 @@ class SourceDataset(Dataset):
 
     @staticmethod
     def _metadata_repr(metadata):
-        val = metadata['Name']
-        if sys.version_info < (3,):
-            return val.encode('ascii','ignore')
-        else:
-            return val
+            val = metadata['Name']
+            return val.encode('ascii','ignore') if sys.version_info < (3,) else val
 
     def __repr__(self):
         return SourceDataset._metadata_repr(self._metadata)
@@ -449,18 +446,17 @@ class Datasets(object):
         return sum(1 for _ in self._get_datasets())
 
     def __getitem__(self, index):
-        '''Retrieve a dataset by index or by name (case-sensitive).'''
-        _not_none('index', index)
+            '''Retrieve a dataset by index or by name (case-sensitive).'''
+            _not_none('index', index)
 
-        datasets = self._get_datasets()
-        if isinstance(index, numbers.Integral):
-            return self._create_dataset(list(datasets)[index])
-        else:
+            datasets = self._get_datasets()
+            if isinstance(index, numbers.Integral):
+                    return self._create_dataset(list(datasets)[index])
             for dataset in datasets:
                 if dataset['Name'] == index:
                     return self._create_dataset(dataset)
 
-        raise IndexError('A data set named "{}" does not exist'.format(index))
+            raise IndexError(f'A data set named "{index}" does not exist')
 
     def add_from_dataframe(self, dataframe, data_type_id, name, description):
         """
@@ -656,11 +652,8 @@ class Experiment(object):
 
     @staticmethod
     def _metadata_repr(metadata):
-        val = u'{0}\t{1}'.format(metadata['ExperimentId'], metadata['Description'])
-        if sys.version_info < (3,):
-            return val.encode('ascii','ignore')
-        else:
-            return val
+            val = u'{0}\t{1}'.format(metadata['ExperimentId'], metadata['Description'])
+            return val.encode('ascii','ignore') if sys.version_info < (3,) else val
 
     def __repr__(self):
         return Experiment._metadata_repr(self._metadata)
@@ -792,18 +785,17 @@ class Experiments(object):
         return sum(1 for _ in self._get_experiments())
 
     def __getitem__(self, index):
-        '''Retrieve an experiment by index or by id.'''
-        _not_none('index', index)
+            '''Retrieve an experiment by index or by id.'''
+            _not_none('index', index)
 
-        experiments = self._get_experiments()
-        if isinstance(index, numbers.Integral):
-            return self._create_experiment(list(experiments)[index])
-        else:
+            experiments = self._get_experiments()
+            if isinstance(index, numbers.Integral):
+                    return self._create_experiment(list(experiments)[index])
             for experiment in experiments:
                 if experiment['ExperimentId'] == index:
                     return self._create_experiment(experiment)
 
-        raise IndexError('An experiment with the id "{}" does not exist'.format(index))
+            raise IndexError(f'An experiment with the id "{index}" does not exist')
 
     def _get_experiments(self):
         experiments = self.workspace._rest.get_experiments(self.workspace.workspace_id)
@@ -821,32 +813,32 @@ _CONFIG_API_ENDPOINT = 'api_endpoint'
 _CONFIG_MANAGEMENT_ENDPOINT = 'management_endpoint'
 
 def _get_workspace_info(workspace_id, authorization_token, endpoint, management_endpoint):
-    if workspace_id is None or authorization_token is None or endpoint is None or management_endpoint is None:
-        # read the settings from config
-        jsonConfig = path.expanduser('~/.azureml/settings.json')
-        if path.exists(jsonConfig):
-            with open(jsonConfig) as cfgFile:
-                config = json.load(cfgFile)
-                if _CONFIG_WORKSPACE_SECTION in config:
-                    ws = config[_CONFIG_WORKSPACE_SECTION]
-                    workspace_id = ws.get(_CONFIG_WORKSPACE_ID, workspace_id)
-                    authorization_token = ws.get(_CONFIG_AUTHORIZATION_TOKEN, authorization_token)
-                    endpoint = ws.get(_CONFIG_API_ENDPOINT, endpoint)
-                    management_endpoint = ws.get(_CONFIG_MANAGEMENT_ENDPOINT, management_endpoint)
-        else:
-            config = ConfigParser.ConfigParser()
-            config.read(path.expanduser('~/.azureml/settings.ini'))
-            
-            if config.has_section(_CONFIG_WORKSPACE_SECTION):
-                if workspace_id is None and config.has_option(_CONFIG_WORKSPACE_SECTION, _CONFIG_WORKSPACE_ID):
-                    workspace_id = config.get(_CONFIG_WORKSPACE_SECTION, _CONFIG_WORKSPACE_ID)
-                if authorization_token is None and config.has_option(_CONFIG_WORKSPACE_SECTION, _CONFIG_AUTHORIZATION_TOKEN):
-                    authorization_token = config.get(_CONFIG_WORKSPACE_SECTION, _CONFIG_AUTHORIZATION_TOKEN)
-                if endpoint is None and config.has_option(_CONFIG_WORKSPACE_SECTION, _CONFIG_API_ENDPOINT):
-                    endpoint = config.get(_CONFIG_WORKSPACE_SECTION, _CONFIG_API_ENDPOINT)
-                if management_endpoint is None and config.has_option(_CONFIG_WORKSPACE_SECTION, _CONFIG_MANAGEMENT_ENDPOINT):
-                    management_endpoint = config.get(_CONFIG_WORKSPACE_SECTION, _CONFIG_MANAGEMENT_ENDPOINT)
-        
+        if workspace_id is None or authorization_token is None or endpoint is None or management_endpoint is None:
+                # read the settings from config
+                jsonConfig = path.expanduser('~/.azureml/settings.json')
+                if path.exists(jsonConfig):
+                    with open(jsonConfig) as cfgFile:
+                        config = json.load(cfgFile)
+                        if _CONFIG_WORKSPACE_SECTION in config:
+                            ws = config[_CONFIG_WORKSPACE_SECTION]
+                            workspace_id = ws.get(_CONFIG_WORKSPACE_ID, workspace_id)
+                            authorization_token = ws.get(_CONFIG_AUTHORIZATION_TOKEN, authorization_token)
+                            endpoint = ws.get(_CONFIG_API_ENDPOINT, endpoint)
+                            management_endpoint = ws.get(_CONFIG_MANAGEMENT_ENDPOINT, management_endpoint)
+                else:
+                    config = ConfigParser.ConfigParser()
+                    config.read(path.expanduser('~/.azureml/settings.ini'))
+
+                    if config.has_section(_CONFIG_WORKSPACE_SECTION):
+                        if workspace_id is None and config.has_option(_CONFIG_WORKSPACE_SECTION, _CONFIG_WORKSPACE_ID):
+                            workspace_id = config.get(_CONFIG_WORKSPACE_SECTION, _CONFIG_WORKSPACE_ID)
+                        if authorization_token is None and config.has_option(_CONFIG_WORKSPACE_SECTION, _CONFIG_AUTHORIZATION_TOKEN):
+                            authorization_token = config.get(_CONFIG_WORKSPACE_SECTION, _CONFIG_AUTHORIZATION_TOKEN)
+                        if endpoint is None and config.has_option(_CONFIG_WORKSPACE_SECTION, _CONFIG_API_ENDPOINT):
+                            endpoint = config.get(_CONFIG_WORKSPACE_SECTION, _CONFIG_API_ENDPOINT)
+                        if management_endpoint is None and config.has_option(_CONFIG_WORKSPACE_SECTION, _CONFIG_MANAGEMENT_ENDPOINT):
+                            management_endpoint = config.get(_CONFIG_WORKSPACE_SECTION, _CONFIG_MANAGEMENT_ENDPOINT)
+
         if workspace_id is None:
             raise ValueError('workspace_id not provided and not available via config')
         if authorization_token is None:
@@ -856,7 +848,7 @@ def _get_workspace_info(workspace_id, authorization_token, endpoint, management_
         if management_endpoint is None:
             management_endpoint = Endpoints.management_default
 
-    return workspace_id, authorization_token, endpoint, management_endpoint
+        return workspace_id, authorization_token, endpoint, management_endpoint
 
 class Workspace(object):
 

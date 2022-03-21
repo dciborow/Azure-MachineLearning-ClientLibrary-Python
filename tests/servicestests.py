@@ -33,22 +33,20 @@ import uuid
 
 def invoke(published_func, *args, **kwargs):
     '''helper to repeatedly invoke the function until it becomes available...'''
-    for i in xrange(100):
+    for _ in xrange(100):
         time.sleep(5)
         try:
             return published_func(*args, **kwargs)
-            break
         except Exception as e:
             traceback.print_exc()
             print(e)
     
 def invoke_map(published_func, *args):
     '''helper to repeatedly invoke the function until it becomes available...'''
-    for i in xrange(100):
+    for _ in xrange(100):
         time.sleep(5)
         try:
             return published_func.map(*args)
-            break
         except Exception as e:
             traceback.print_exc()
             print(e)

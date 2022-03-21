@@ -63,10 +63,7 @@ def _dataframe_to_txt(writer, dataframe):
 def _dataframe_from_csv(reader, delimiter, with_header, skipspace):
     """Returns csv data as a pandas Dataframe object"""
     sep = delimiter
-    header = 0
-    if not with_header:
-        header = None
-
+    header = 0 if with_header else None
     return pd.read_csv(
         reader,
         header=header,

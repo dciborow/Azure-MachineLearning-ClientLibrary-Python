@@ -146,10 +146,7 @@ def _serialize_bool(inp, memo):
 
 @deserializer('bool')
 def _deserialize_bool(value):
-    if value['value'] == 'true':
-        return True
-    else:
-        return False
+    return value['value'] == 'true'
 
 # Type: int
 @serializer(int)
@@ -243,10 +240,7 @@ def _deserialize_null(value):
 @serializer(list)
 @serializer(tuple)
 def _serialize_list_or_tuple(inp, memo):
-    res = []
-    for value in inp:
-        res.append(_encode(value, memo))
-
+    res = [_encode(value, memo) for value in inp]
     return {'type': type(inp).__name__, 'value': res }
 
 @deserializer('list')
@@ -331,7 +325,7 @@ def _decode(inp):
     if isinstance(value, dict):
         return _decode_inner(value)
 
-    raise TypeError('expected a dictionary, got ' + type(inp).__name__)
+    raise TypeError(f'expected a dictionary, got {type(inp).__name__}')
 
 PUBLISH_URL_FORMAT = '{}/workspaces/{}/webservices/{}'
 
@@ -538,7 +532,7 @@ as attributes.
         self.service_id = service_id
 
     def __repr__(self):
-        return '<service {} at {}>'.format(self.func.__name__, self.url)
+        return f'<service {self.func.__name__} at {self.url}>'
 
     def _invoke(self, call_args):
         body = {
@@ -552,13 +546,12 @@ as attributes.
         }
 
         resp = requests.post(
-            self.url, 
-            json=body, 
-            headers={
-            'authorization': 'bearer ' + self.api_key,
-            }
+            self.url,
+            json=body,
+            headers={'authorization': f'bearer {self.api_key}'},
         )
-        
+
+
         r = resp.json()
         if resp.status_code >= 300:
             try:
@@ -616,61 +609,69 @@ def _get_dataframe_schema(function):
 
 def _get_main_source(function):
     
-    main_source = u'def azureml_main(df1 = None, df2 = None):\n'
-    main_source += u'    results = []\n' 
+    main_source = (
+        u'def azureml_main(df1 = None, df2 = None):\n' + u'    results = []\n'
+    )
 
     if _get_dataframe_schema(function):
         # function just takes a dataframe...
-        main_source += u'    results.append(__user_function(df1))' + chr(10)
+        main_source += f'    results.append(__user_function(df1)){chr(10)}'
     else:
         # we're marshalling the arguments in.
-        main_source += u'    for i in range(df1.shape[0]):' + chr(10)
+        main_source += f'    for i in range(df1.shape[0]):{chr(10)}'
         for arg in _get_args(function):
             arg_type = _get_arg_type(arg, function)
             if pandas is not None and arg_type is pandas.DataFrame:
                 raise Exception('Only a single DataFrame argument is supported')
 
             if _get_arg_type(arg, function) == OBJECT_NAME:
-                main_source += '        ' + arg + u' = ' + u'_decode(df1["' + arg + u'"][i])' + chr(10)
+                main_source += (
+                    f'        {arg} = '
+                    + u'_decode(df1["'
+                    + arg
+                    + u'"][i])'
+                    + chr(10)
+                )
+
             else:
-                main_source += '        ' + arg + u' = ' + u'df1["' + arg + u'"][i]' + chr(10)
-    
+                main_source += f'        {arg} = ' + u'df1["' + arg + u'"][i]' + chr(10)
+
         main_source += u'        results.append(__user_function(' 
-    
+
         args = inspect.getargs(function.__code__)
         all_args = args.args
         if args.varargs is not None:
-            all_args.append(u'*' + args.varargs)
+            all_args.append(f'*{args.varargs}')
         if args.keywords is not None:
-            all_args.append(u'**' + args.keywords)
-    
+            all_args.append(f'**{args.keywords}')
+
         # pass position arguments...
         main_source += u', '.join(all_args)
-        main_source += u'))' + chr(10)
-    
+        main_source += f')){chr(10)}'
+
     ret_annotation = _get_annotation('return', function)
     if _get_dataframe_schema(function):
         # function just returns a data frame directly
-        main_source += u'    if len(results) == 1:' + chr(10)
-        main_source += u'        return results[0]' + chr(10)
-        main_source += u'    return pandas.DataFrame(results)' + chr(10)
+        main_source += f'    if len(results) == 1:{chr(10)}'
+        main_source += f'        return results[0]{chr(10)}'
+        main_source += f'    return pandas.DataFrame(results){chr(10)}'
     elif isinstance(ret_annotation, tuple):
         # multi-value return support...
         format = []
         arg_names = []
         for index, ret_type in enumerate(ret_annotation):
-            arg_names.append(u'r' + str(index))
+            arg_names.append(f'r{str(index)}')
             t = _annotation_to_type(ret_type)
             if t == OBJECT_NAME:
-                format.append(u'_encode(r' + str(index) + u')')
+                format.append(f'_encode(r{str(index)})')
             else:
-                format.append(u'r' + str(index))
+                format.append(f'r{str(index)}')
         main_source += u'    return pandas.DataFrame([(' + u', '.join(format) + u') for ' + ', '.join(arg_names) + u' in results])' + chr(10)
     elif _get_arg_type('return', function) == OBJECT_NAME:
         main_source += u'    return pandas.DataFrame([_encode(r) for r in results])' + chr(10)
     else:
-        main_source += u'    return pandas.DataFrame(results)' + chr(10)
-    
+        main_source += f'    return pandas.DataFrame(results){chr(10)}'
+
     return main_source
 
 def _get_source(function):
@@ -682,10 +683,10 @@ def _get_source(function):
             line2 = source_file.readline()
             if line1[:3] == '\xef\xbb\xbf':
                 encoding = 'utf-8-sig'
-            else:
-                match = re.search(b"coding[:=]\s*([-\w.]+)", line1) or re.search(b"coding[:=]\s*([-\w.]+)", line2)
-                if match:
-                    encoding = match.groups()[0]
+            elif match := re.search(
+                b"coding[:=]\s*([-\w.]+)", line1
+            ) or re.search(b"coding[:=]\s*([-\w.]+)", line2):
+                encoding = match.groups()[0]
         with codecs.open(source_file, 'r', encoding) as source_file:
             source_text = source_file.read()
     except:
@@ -697,7 +698,7 @@ def _get_source(function):
         ourfile = ourfile[:-1]
     if encoding:
         source = u'# coding=' + encoding.decode('ascii')
-    
+
     with codecs.open(ourfile, 'r', 'ascii') as services_file:
         source = services_file.read()
 
@@ -748,8 +749,8 @@ services.service_id = attach
 '''
         source += source_text
         source += chr(10)
-        source += u'__user_function = ' + function.__name__
-    
+        source += f'__user_function = {function.__name__}'
+
     return source
 
 _known_types = {
@@ -818,7 +819,7 @@ def _publish_worker(func, files, workspace_id = None, workspace_token = None, ma
         # multi-value return
         results = OrderedDict()
         for index, obj_type in enumerate(ret_type):
-            results['result' + str(index)] = _annotation_to_type(obj_type)
+            results[f'result{str(index)}'] = _annotation_to_type(obj_type)
     elif isinstance(ret_type, dict):
         # multi-value return
         results = OrderedDict()
@@ -833,7 +834,7 @@ def _publish_worker(func, files, workspace_id = None, workspace_token = None, ma
         "Language" : "python-2.7-64",
         "SourceCode": script_code,
     }
-    
+
     attachments = getattr(func, '__attachments__', None)
     if attachments or files:
         data = BytesIO()
@@ -858,7 +859,7 @@ def _publish_worker(func, files, workspace_id = None, workspace_token = None, ma
     }
     id = str(getattr(func, '__service_id__', uuid.uuid4())).replace('-', '')
     url = PUBLISH_URL_FORMAT.format(management_endpoint, workspace_id, id)
-    headers = {'authorization': 'bearer ' + workspace_token}
+    headers = {'authorization': f'bearer {workspace_token}'}
     resp = requests.put(
         url, 
         json=body, 
@@ -866,12 +867,12 @@ def _publish_worker(func, files, workspace_id = None, workspace_token = None, ma
     )
 
     if _DEBUG:
-        with open(func.__name__ + '.req', 'w') as f:
+        with open(f'{func.__name__}.req', 'w') as f:
             f.write(url + chr(10))
             f.write(json.dumps(body))
             f.close()
 
-        with open(func.__name__ + '.res', 'w') as f:
+        with open(f'{func.__name__}.res', 'w') as f:
             f.write(str(resp.status_code) + chr(10))
             f.write(resp.text + chr(10))
             f.close()
@@ -881,16 +882,21 @@ def _publish_worker(func, files, workspace_id = None, workspace_token = None, ma
             msg = resp.json()['error']['message']
         except:
             msg = str(resp.status_code)
-        raise ValueError('Failed to publish function: ' + msg + chr(10)  + 
-                         'Set azureml.services._DEBUG = True to enable writing {}.req/{}.res files'.format(func.__name__, func.__name__))
+        raise ValueError(
+            (
+                f'Failed to publish function: {msg}{chr(10)}'
+                + f'Set azureml.services._DEBUG = True to enable writing {func.__name__}.req/{func.__name__}.res files'
+            )
+        )
+
 
     j = resp.json()
-    epUrl = url + '/endpoints/' + j['DefaultEndpointName']
+    epUrl = f'{url}/endpoints/' + j['DefaultEndpointName']
     epResp = requests.get(epUrl, headers=headers)
     endpoints = epResp.json()
 
     url = endpoints['ApiLocation'] + '/execute?api-version=2.0'
-    
+
     return published(url, endpoints['PrimaryKey'], endpoints['HelpLocation'] + '/score', func, id)
 
 def publish(func_or_workspace_id, workspace_id_or_token = None, workspace_token_or_none = None, files=(), endpoint=None):

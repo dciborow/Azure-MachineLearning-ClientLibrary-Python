@@ -567,12 +567,12 @@ class UploadTests(unittest.TestCase):
 
         self.original_data = [{'a': 1, 'b': 2}, {'a': 5, 'b': 10, 'c': 20}]
         self.original_dataframe = pd.DataFrame(self.original_data)
-        self.original_name = 'unittestcsvwh' + id_generator()
-        self.original_description = 'safe to be deleted - ' + self.original_name
+        self.original_name = f'unittestcsvwh{id_generator()}'
+        self.original_description = f'safe to be deleted - {self.original_name}'
 
         self.updated_data = [{'a': 101, 'b': 102}, {'a': 105, 'b': 110, 'c': 120}]
         self.updated_dataframe = pd.DataFrame(self.updated_data)
-        self.updated_name = 'unittestcsvwhupdate' + id_generator()
+        self.updated_name = f'unittestcsvwhupdate{id_generator()}'
         self.updated_description = 'updated'
 
 
@@ -661,7 +661,7 @@ class UploadTests(unittest.TestCase):
 
     def test_add_from_dataframe_invalid_name(self):
         # Arrange
-        invalid_name = 'unittestcsvwh:' + id_generator()
+        invalid_name = f'unittestcsvwh:{id_generator()}'
 
         # Act
         try:
@@ -697,10 +697,13 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(result.description, self.original_description)
 
     def test_add_from_raw_data_chunked(self):
-        original_name = 'unittestcsvwh' + id_generator()
+        original_name = f'unittestcsvwh{id_generator()}'
 
         # Arrange
-        original_raw_data = b''.join(chr(random.randint(0, 255)) for x in range(0x800000))
+        original_raw_data = b''.join(
+            chr(random.randint(0, 255)) for _ in range(0x800000)
+        )
+
 
         # Act
         result = self.workspace.datasets.add_from_raw_data(
